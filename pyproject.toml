@@ -1,0 +1,28 @@
+[project]
+name = "vault-recommender"
+version = "0.1.0"
+description = "Semantic recommendation engine for Obsidian vaults — embeddings + wiki-link graph boosting with MCP server for Claude Code integration."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [
+    { name = "Joshua Oliphant" },
+]
+keywords = ["obsidian", "recommendation", "embeddings", "mcp", "knowledge-management"]
+dependencies = [
+    "fastmcp>=3.1.1",
+    "pyyaml>=6.0.3",
+    "scikit-learn>=1.8.0",
+    "sentence-transformers>=5.3.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
+
+[project.scripts]
+vault-recommender = "vault_recommender.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
