@@ -46,9 +46,7 @@ class VaultIndex:
     def load(cls, directory: Path) -> VaultIndex:
         """Load a previously saved index."""
         embeddings = np.load(directory / "embeddings.npy")
-        metadata = json.loads(
-            (directory / "metadata.json").read_text(encoding="utf-8")
-        )
+        metadata = json.loads((directory / "metadata.json").read_text(encoding="utf-8"))
         entries = [NoteEntry(**e) for e in metadata["entries"]]
         return cls(
             entries=entries,

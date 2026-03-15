@@ -106,7 +106,9 @@ class VaultRecommender:
         """
         model = self._get_model()
         query_embedding = model.encode(topic, normalize_embeddings=True)
-        return self._rank(query_embedding, exclude_idx=None, query_path=None, top_k=top_k)
+        return self._rank(
+            query_embedding, exclude_idx=None, query_path=None, top_k=top_k
+        )
 
     def _rank(
         self,
@@ -130,7 +132,11 @@ class VaultRecommender:
             if i == exclude_idx:
                 continue
 
-            if exclude_linked and query_path and self.graph.are_linked(query_path, entry.path):
+            if (
+                exclude_linked
+                and query_path
+                and self.graph.are_linked(query_path, entry.path)
+            ):
                 continue
 
             score = float(similarities[i])

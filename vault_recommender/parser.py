@@ -59,7 +59,7 @@ def parse_note(content: str, path: str = "") -> ParsedNote:
             frontmatter = yaml.safe_load(fm_match.group(1)) or {}
         except yaml.YAMLError:
             frontmatter = {}
-        body = content[fm_match.end():]
+        body = content[fm_match.end() :]
 
     # Extract wiki-links, keeping only the target (left of pipe)
     raw_links = _WIKILINK_RE.findall(body)
@@ -73,7 +73,9 @@ def parse_note(content: str, path: str = "") -> ParsedNote:
     )
 
 
-def parse_vault(vault_path: Path, exclude_patterns: list[str] | None = None) -> list[ParsedNote]:
+def parse_vault(
+    vault_path: Path, exclude_patterns: list[str] | None = None
+) -> list[ParsedNote]:
     """Parse all markdown files in a vault directory.
 
     Args:
@@ -84,7 +86,14 @@ def parse_vault(vault_path: Path, exclude_patterns: list[str] | None = None) -> 
         List of ParsedNote objects for all .md files.
     """
     if exclude_patterns is None:
-        exclude_patterns = [".git", ".obsidian", ".claude", "node_modules", ".venv", "__pycache__"]
+        exclude_patterns = [
+            ".git",
+            ".obsidian",
+            ".claude",
+            "node_modules",
+            ".venv",
+            "__pycache__",
+        ]
 
     notes = []
     for md_file in sorted(vault_path.rglob("*.md")):

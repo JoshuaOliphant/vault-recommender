@@ -1,7 +1,6 @@
 # ABOUTME: Tests for the markdown parser that extracts frontmatter, body, and wiki-links.
 # ABOUTME: First component in the recommender pipeline.
 
-import pytest
 from vault_recommender.parser import parse_note
 
 

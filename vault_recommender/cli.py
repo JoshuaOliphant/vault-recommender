@@ -101,8 +101,12 @@ def main() -> None:
     rec.add_argument("--note", help="Path to a note (relative to vault root)")
     rec.add_argument("--topic", help="Free-text topic query")
     rec.add_argument("--top-k", type=int, default=10, help="Number of results")
-    rec.add_argument("--exclude-linked", action="store_true", help="Hide already-linked notes")
-    rec.add_argument("--json", action="store_true", help="Output as JSON (for LLM consumption)")
+    rec.add_argument(
+        "--exclude-linked", action="store_true", help="Hide already-linked notes"
+    )
+    rec.add_argument(
+        "--json", action="store_true", help="Output as JSON (for LLM consumption)"
+    )
 
     args = parser.parse_args()
 

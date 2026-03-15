@@ -57,9 +57,7 @@ def _get_recommender():
     notes = parse_vault(_vault_path)
     graph = build_graph(notes)
 
-    _recommender = VaultRecommender(
-        index=index, graph=graph, vault_path=_vault_path
-    )
+    _recommender = VaultRecommender(index=index, graph=graph, vault_path=_vault_path)
     return _recommender
 
 
@@ -111,9 +109,7 @@ def recommend_by_note(
         tags, and a reason explaining why each note was recommended.
     """
     rec = _get_recommender()
-    results = rec.similar_to_note(
-        note_path, top_k=top_k, exclude_linked=exclude_linked
-    )
+    results = rec.similar_to_note(note_path, top_k=top_k, exclude_linked=exclude_linked)
     return json.dumps([r.to_dict() for r in results], indent=2)
 
 
@@ -137,9 +133,7 @@ def find_missing_connections(
         be linked to the given note.
     """
     rec = _get_recommender()
-    results = rec.similar_to_note(
-        note_path, top_k=top_k, exclude_linked=True
-    )
+    results = rec.similar_to_note(note_path, top_k=top_k, exclude_linked=True)
     return json.dumps([r.to_dict() for r in results], indent=2)
 
 

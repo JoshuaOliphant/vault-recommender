@@ -1,7 +1,6 @@
 # ABOUTME: Tests for the wiki-link graph that enables relationship-aware boosting.
 # ABOUTME: Validates bidirectional links and multi-hop neighbor discovery.
 
-import pytest
 from vault_recommender.graph import LinkGraph, build_graph
 from vault_recommender.parser import ParsedNote
 

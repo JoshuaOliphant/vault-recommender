@@ -39,7 +39,9 @@ class LinkGraph:
             next_frontier: set[str] = set()
             for node in frontier:
                 # Follow both directions — outgoing links and backlinks
-                connected = self.outgoing.get(node, set()) | self.incoming.get(node, set())
+                connected = self.outgoing.get(node, set()) | self.incoming.get(
+                    node, set()
+                )
                 for neighbor in connected:
                     if neighbor not in visited and neighbor != normalized:
                         visited[neighbor] = hop

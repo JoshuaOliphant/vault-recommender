@@ -2,7 +2,6 @@
 # ABOUTME: Validates that semantic similarity + graph boosting produce ranked results.
 
 import numpy as np
-import pytest
 
 from vault_recommender.graph import LinkGraph
 from vault_recommender.indexer import NoteEntry, VaultIndex
@@ -18,19 +17,42 @@ def _make_test_index() -> tuple[VaultIndex, LinkGraph]:
     - "career-plan" is between python and cooking (medium cosine to both)
     """
     entries = [
-        NoteEntry(path="python-guide.md", title="Python Guide", tags=["python", "coding"], snippet="Learn Python basics"),
-        NoteEntry(path="coding-tips.md", title="Coding Tips", tags=["coding"], snippet="Tips for better code"),
-        NoteEntry(path="cooking-recipe.md", title="Cooking Recipe", tags=["cooking"], snippet="How to make pasta"),
-        NoteEntry(path="career-plan.md", title="Career Plan", tags=["career"], snippet="My career strategy"),
+        NoteEntry(
+            path="python-guide.md",
+            title="Python Guide",
+            tags=["python", "coding"],
+            snippet="Learn Python basics",
+        ),
+        NoteEntry(
+            path="coding-tips.md",
+            title="Coding Tips",
+            tags=["coding"],
+            snippet="Tips for better code",
+        ),
+        NoteEntry(
+            path="cooking-recipe.md",
+            title="Cooking Recipe",
+            tags=["cooking"],
+            snippet="How to make pasta",
+        ),
+        NoteEntry(
+            path="career-plan.md",
+            title="Career Plan",
+            tags=["career"],
+            snippet="My career strategy",
+        ),
     ]
 
     # Hand-crafted normalized vectors
-    embeddings = np.array([
-        [0.9, 0.4, 0.1],   # python-guide
-        [0.85, 0.5, 0.15],  # coding-tips (similar to python)
-        [0.1, 0.1, 0.98],   # cooking-recipe (orthogonal)
-        [0.5, 0.7, 0.5],    # career-plan (between)
-    ], dtype=np.float32)
+    embeddings = np.array(
+        [
+            [0.9, 0.4, 0.1],  # python-guide
+            [0.85, 0.5, 0.15],  # coding-tips (similar to python)
+            [0.1, 0.1, 0.98],  # cooking-recipe (orthogonal)
+            [0.5, 0.7, 0.5],  # career-plan (between)
+        ],
+        dtype=np.float32,
+    )
     # Normalize to unit length
     norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
     embeddings = embeddings / norms
