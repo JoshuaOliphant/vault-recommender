@@ -8,10 +8,8 @@ import json
 import sys
 from pathlib import Path
 
-from vault_recommender.graph import build_graph
-from vault_recommender.indexer import build_index, VaultIndex
-from vault_recommender.parser import parse_vault
-from vault_recommender.recommender import VaultRecommender
+# Heavy imports (sentence_transformers, torch) deferred to command functions
+# so --help responds instantly.
 
 
 DEFAULT_INDEX_DIR = Path(".vault-recommender-index")
@@ -19,6 +17,9 @@ DEFAULT_INDEX_DIR = Path(".vault-recommender-index")
 
 def cmd_index(args: argparse.Namespace) -> None:
     """Build or rebuild the vault index."""
+    from vault_recommender.indexer import build_index
+    from vault_recommender.parser import parse_vault
+
     vault_path = Path(args.vault).resolve()
     index_dir = Path(args.index_dir).resolve()
 
@@ -36,6 +37,11 @@ def cmd_index(args: argparse.Namespace) -> None:
 
 def cmd_recommend(args: argparse.Namespace) -> None:
     """Get recommendations for a note or topic."""
+    from vault_recommender.graph import build_graph
+    from vault_recommender.indexer import VaultIndex
+    from vault_recommender.parser import parse_vault
+    from vault_recommender.recommender import VaultRecommender
+
     vault_path = Path(args.vault).resolve()
     index_dir = Path(args.index_dir).resolve()
 
