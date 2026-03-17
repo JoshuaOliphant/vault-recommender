@@ -137,5 +137,22 @@ def find_missing_connections(
     return json.dumps([r.to_dict() for r in results], indent=2)
 
 
+@mcp.tool()
+def reload_index() -> str:
+    """Force the recommender to reload its index from disk.
+
+    Call this after re-indexing the vault (e.g., via the CLI) so that
+    subsequent queries use the fresh embeddings without restarting
+    the MCP server.
+
+    Returns:
+        Confirmation message with the number of entries in the reloaded index.
+    """
+    global _recommender
+    _recommender = None
+    rec = _get_recommender()
+    return f"Index reloaded. {len(rec.index.entries)} notes indexed."
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")
