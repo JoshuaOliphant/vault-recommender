@@ -44,7 +44,7 @@ class VaultRecommender:
         index: VaultIndex,
         graph: LinkGraph,
         vault_path: Path | None = None,
-        link_boost_1hop: float = 0.15,
+        link_boost_1hop: float = 0.50,
         link_boost_2hop: float = 0.05,
         staleness_boost: float = 0.1,
     ):

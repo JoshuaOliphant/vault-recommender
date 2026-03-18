@@ -38,12 +38,29 @@ def cmd_index(args: argparse.Namespace) -> None:
 def cmd_recommend(args: argparse.Namespace) -> None:
     """Get recommendations for a note or topic."""
     from vault_recommender.graph import build_graph
-    from vault_recommender.indexer import VaultIndex
+    from vault_recommender.indexer import DEFAULT_MODEL, VaultIndex
     from vault_recommender.parser import parse_vault
     from vault_recommender.recommender import VaultRecommender
 
     vault_path = Path(args.vault).resolve()
     index_dir = Path(args.index_dir).resolve()
+
+    if args.rebuild:
+        if VaultIndex.is_stale(index_dir, vault_path):
+            # Read model from existing metadata to preserve the user's original choice
+            meta_path = index_dir / "metadata.json"
+            if meta_path.exists():
+                try:
+                    existing_meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                    args.model = existing_meta.get("model_name", DEFAULT_MODEL)
+                except (json.JSONDecodeError, OSError):
+                    args.model = DEFAULT_MODEL
+            else:
+                args.model = DEFAULT_MODEL
+            print("Index is stale. Rebuilding...", file=sys.stderr)
+            cmd_index(args)
+        else:
+            print("Index is fresh.", file=sys.stderr)
 
     if not (index_dir / "metadata.json").exists():
         print("No index found. Run 'index' first.", file=sys.stderr)
@@ -82,6 +99,9 @@ def cmd_recommend(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
+    # Inline the default to avoid importing indexer (which pulls in torch) just for --help
+    default_model = "all-MiniLM-L6-v2"
+
     parser = argparse.ArgumentParser(
         description="Vault Recommender — semantic note recommendations"
     )
@@ -99,7 +119,7 @@ def main() -> None:
     # Index command
     idx = subparsers.add_parser("index", help="Build the embedding index")
     idx.add_argument(
-        "--model", default="all-MiniLM-L6-v2", help="Sentence-transformer model name"
+        "--model", default=default_model, help="Sentence-transformer model name"
     )
 
     # Recommend command
@@ -112,6 +132,9 @@ def main() -> None:
     )
     rec.add_argument(
         "--json", action="store_true", help="Output as JSON (for LLM consumption)"
+    )
+    rec.add_argument(
+        "--rebuild", action="store_true", help="Rebuild index if vault has changed"
     )
 
     args = parser.parse_args()

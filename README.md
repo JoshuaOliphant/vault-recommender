@@ -1,5 +1,8 @@
 # vault-recommender
 
+[![CI](https://github.com/JoshuaOliphant/vault-recommender/actions/workflows/ci.yml/badge.svg)](https://github.com/JoshuaOliphant/vault-recommender/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/vault-recommender)](https://pypi.org/project/vault-recommender/)
+
 Semantic recommendation engine for Obsidian vaults. Uses sentence-transformer embeddings + wiki-link graph boosting to surface related notes, forgotten knowledge, and missing connections.
 
 Designed as a tool for LLMs — returns context-rich results with explanations, not just ranked paths.
@@ -28,6 +31,10 @@ Your vault (markdown files)
 ## Installation
 
 ```bash
+# From PyPI
+uv tool install vault-recommender
+
+# Or from source
 git clone https://github.com/JoshuaOliphant/vault-recommender.git
 cd vault-recommender
 uv sync
@@ -39,20 +46,25 @@ uv sync
 
 ```bash
 # Build the index (run once, re-run when vault changes significantly)
-uv run vault-recommender --vault /path/to/vault index
+vault-recommender --vault /path/to/vault index
 
 # Recommend by topic
-uv run vault-recommender --vault /path/to/vault recommend --topic "career transition strategies"
+vault-recommender --vault /path/to/vault recommend --topic "career transition strategies"
 
 # Recommend notes similar to a specific note
-uv run vault-recommender --vault /path/to/vault recommend --note "areas/career/plan.md"
+vault-recommender --vault /path/to/vault recommend --note "areas/career/plan.md"
 
 # Find missing connections (similar but not linked)
-uv run vault-recommender --vault /path/to/vault recommend --note "areas/career/plan.md" --exclude-linked
+vault-recommender --vault /path/to/vault recommend --note "areas/career/plan.md" --exclude-linked
+
+# Auto-rebuild stale index before querying
+vault-recommender --vault /path/to/vault recommend --topic "python testing" --rebuild
 
 # JSON output (for LLM consumption)
-uv run vault-recommender --vault /path/to/vault recommend --topic "python testing" --json
+vault-recommender --vault /path/to/vault recommend --topic "python testing" --json
 ```
+
+The `--rebuild` flag checks whether any vault file is newer than the index. If so, it rebuilds automatically before querying. If the index is fresh, it skips silently.
 
 ### MCP Server (Claude Code integration)
 
@@ -80,10 +92,11 @@ Add to your `.mcp.json`:
 }
 ```
 
-This exposes three tools:
+This exposes four tools:
 - `recommend_by_topic` — open-ended semantic search
 - `recommend_by_note` — "notes like this one"
 - `find_missing_connections` — similar but unlinked notes
+- `reload_index` — force-reload the index after re-indexing via CLI
 
 ### Python API
 
@@ -118,6 +131,7 @@ for r in results:
 - Queries return in <1 second (after model warm-up)
 - Index persists as numpy + JSON (~2MB for 1,500 notes)
 - Model: `all-MiniLM-L6-v2` (~80MB, runs on CPU)
+- `--help` responds instantly (heavy imports deferred until needed)
 
 ## Requirements
 
