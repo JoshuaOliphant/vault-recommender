@@ -6,7 +6,7 @@ Semantic recommendation engine for Obsidian vaults. Embeddings + wiki-link graph
 
 ```bash
 uv sync              # install deps
-uv run pytest -q     # run tests (23 tests, ~3s)
+uv run pytest -q     # run tests (34 tests, ~3s)
 ```
 
 ## Architecture
@@ -18,6 +18,7 @@ vault_recommender/
 ├── graph.py         # Bidirectional wiki-link adjacency graph
 ├── recommender.py   # Core engine: cosine similarity + graph boost + staleness boost
 ├── cli.py           # CLI entrypoint (vault-recommender command)
+├── server.py        # HTTP server (Starlette/uvicorn) for fast hook integration
 └── mcp_server.py    # FastMCP server exposing 3 tools
 ```
 
@@ -28,6 +29,7 @@ vault_recommender/
 ```bash
 uv run vault-recommender --vault /path index          # build index
 uv run vault-recommender --vault /path recommend      # query
+uv run vault-recommender --vault /path serve           # HTTP server on :7532
 uv run pytest -q                                      # tests
 ```
 

@@ -32,11 +32,7 @@ def _get_recommender():
     if _recommender is not None:
         return _recommender
 
-    # Defer heavy imports until first tool call
-    from vault_recommender.graph import build_graph
-    from vault_recommender.indexer import VaultIndex
-    from vault_recommender.parser import parse_vault
-    from vault_recommender.recommender import VaultRecommender
+    from vault_recommender.recommender import create_recommender
 
     experiment_dir = Path(__file__).parent.parent
     index_dir = experiment_dir / ".vault-recommender-index"
@@ -47,17 +43,7 @@ def _get_recommender():
     )
     _vault_path = Path(vault_str).resolve()
 
-    if not (index_dir / "metadata.json").exists():
-        raise RuntimeError(
-            f"No index found at {index_dir}. "
-            "Run 'uv run python -m vault_recommender.cli index' first."
-        )
-
-    index = VaultIndex.load(index_dir)
-    notes = parse_vault(_vault_path)
-    graph = build_graph(notes)
-
-    _recommender = VaultRecommender(index=index, graph=graph, vault_path=_vault_path)
+    _recommender = create_recommender(_vault_path, index_dir)
     return _recommender
 
 

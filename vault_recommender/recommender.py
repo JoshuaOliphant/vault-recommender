@@ -10,8 +10,28 @@ from pathlib import Path
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from vault_recommender.graph import LinkGraph
+from vault_recommender.graph import LinkGraph, build_graph
 from vault_recommender.indexer import VaultIndex
+
+
+def create_recommender(vault_path: Path, index_dir: Path) -> "VaultRecommender":
+    """Load index, parse vault, build graph, and return a ready recommender.
+
+    Shared factory used by CLI, HTTP server, and MCP server so init logic
+    lives in one place.
+    """
+    from vault_recommender.indexer import VaultIndex
+    from vault_recommender.parser import parse_vault
+
+    if not (index_dir / "metadata.json").exists():
+        raise FileNotFoundError(
+            f"No index found at {index_dir}. Run 'vault-recommender index' first."
+        )
+
+    index = VaultIndex.load(index_dir)
+    notes = parse_vault(vault_path)
+    graph = build_graph(notes)
+    return VaultRecommender(index=index, graph=graph, vault_path=vault_path)
 
 
 @dataclass
