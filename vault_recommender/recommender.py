@@ -20,7 +20,6 @@ def create_recommender(vault_path: Path, index_dir: Path) -> "VaultRecommender":
     Shared factory used by CLI, HTTP server, and MCP server so init logic
     lives in one place.
     """
-    from vault_recommender.indexer import VaultIndex
     from vault_recommender.parser import parse_vault
 
     if not (index_dir / "metadata.json").exists():

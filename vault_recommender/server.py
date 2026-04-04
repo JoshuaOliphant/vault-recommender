@@ -33,7 +33,16 @@ def _recommend(request: Request) -> JSONResponse:
             {"error": "Provide a topic or note query parameter."}, status_code=400
         )
 
-    top_k = int(request.query_params.get("top_k", "3"))
+    try:
+        top_k = int(request.query_params.get("top_k", "3"))
+    except ValueError:
+        return JSONResponse(
+            {"error": "top_k must be a positive integer."}, status_code=400
+        )
+    if top_k < 1:
+        return JSONResponse(
+            {"error": "top_k must be a positive integer."}, status_code=400
+        )
     exclude_linked = request.query_params.get("exclude_linked", "").lower() == "true"
 
     recommender: VaultRecommender = request.app.state.recommender
@@ -49,18 +58,21 @@ def _recommend(request: Request) -> JSONResponse:
 
 
 def _reload(request: Request) -> JSONResponse:
-    # When vault_path and index_dir are stored, reload from disk.
-    # Otherwise (test injection), just confirm the current state.
     vault_path = getattr(request.app.state, "vault_path", None)
     index_dir = getattr(request.app.state, "index_dir", None)
 
-    if vault_path and index_dir:
-        from vault_recommender.recommender import create_recommender
+    if not vault_path or not index_dir:
+        return JSONResponse(
+            {
+                "error": "Reload unavailable: server started without vault_path/index_dir."
+            },
+            status_code=503,
+        )
 
-        request.app.state.recommender = create_recommender(vault_path, index_dir)
+    from vault_recommender.recommender import create_recommender
 
-    recommender: VaultRecommender = request.app.state.recommender
-    count = len(recommender.index.entries)
+    request.app.state.recommender = create_recommender(vault_path, index_dir)
+    count = len(request.app.state.recommender.index.entries)
     return JSONResponse({"message": f"Index reloaded. {count} notes indexed."})
 
 

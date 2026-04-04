@@ -33,6 +33,19 @@ class TestHealth:
 
 
 class TestRecommend:
+    def test_recommend_invalid_top_k_returns_400(self, client):
+        resp = client.get(
+            "/recommend", params={"note": "python-guide.md", "top_k": "abc"}
+        )
+        assert resp.status_code == 400
+        assert "top_k" in resp.json()["error"].lower()
+
+    def test_recommend_negative_top_k_returns_400(self, client):
+        resp = client.get(
+            "/recommend", params={"note": "python-guide.md", "top_k": "-1"}
+        )
+        assert resp.status_code == 400
+
     def test_recommend_by_note(self, client):
         resp = client.get(
             "/recommend", params={"note": "python-guide.md", "top_k": "2"}
@@ -90,14 +103,15 @@ class TestRecommend:
 
 
 class TestReload:
-    def test_reload_returns_200(self, client):
-        """Reload with injected recommender re-stores the same instance."""
+    def test_reload_without_vault_path_returns_503(self, client):
+        """Reload on test-injected server (no vault_path) returns 503."""
         resp = client.post("/reload")
-        assert resp.status_code == 200
-        assert (
-            "reloaded" in resp.json()["message"].lower()
-            or "notes" in resp.json()["message"].lower()
-        )
+        assert resp.status_code == 503
+        assert "unavailable" in resp.json()["error"].lower()
+
+    def test_reload_method_not_allowed(self, client):
+        resp = client.get("/reload")
+        assert resp.status_code == 405
 
 
 class TestRouting:

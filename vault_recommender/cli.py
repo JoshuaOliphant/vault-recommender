@@ -99,7 +99,11 @@ def cmd_serve(args: argparse.Namespace) -> None:
     index_dir = Path(args.index_dir).resolve()
 
     print(f"Loading index from {index_dir}...", file=sys.stderr)
-    recommender = create_recommender(vault_path, index_dir)
+    try:
+        recommender = create_recommender(vault_path, index_dir)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
     print(
         f"Loaded {len(recommender.index.entries)} notes. "
         f"Starting server on {args.host}:{args.port}",
