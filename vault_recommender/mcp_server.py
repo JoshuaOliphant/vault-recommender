@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from fastmcp import FastMCP
+from fastmcp.server.context import Context
 from fastmcp.server.lifespan import lifespan
 
 
@@ -50,6 +51,7 @@ mcp = FastMCP(
 @mcp.tool()
 def recommend_by_topic(
     topic: str,
+    ctx: Context,
     top_k: int = 10,
 ) -> str:
     """Find vault notes semantically related to a topic or question.
@@ -66,7 +68,7 @@ def recommend_by_topic(
         JSON array of recommendations with path, title, score, snippet,
         tags, and a reason explaining why each note was recommended.
     """
-    rec = mcp.state["recommender"]
+    rec = ctx.lifespan_context["recommender"]
     results = rec.similar_to_topic(topic, top_k=top_k)
     return json.dumps([r.to_dict() for r in results], indent=2)
 
@@ -74,6 +76,7 @@ def recommend_by_topic(
 @mcp.tool()
 def recommend_by_note(
     note_path: str,
+    ctx: Context,
     top_k: int = 10,
     exclude_linked: bool = False,
 ) -> str:
@@ -94,7 +97,7 @@ def recommend_by_note(
         JSON array of recommendations with path, title, score, snippet,
         tags, and a reason explaining why each note was recommended.
     """
-    rec = mcp.state["recommender"]
+    rec = ctx.lifespan_context["recommender"]
     results = rec.similar_to_note(note_path, top_k=top_k, exclude_linked=exclude_linked)
     return json.dumps([r.to_dict() for r in results], indent=2)
 
@@ -102,6 +105,7 @@ def recommend_by_note(
 @mcp.tool()
 def find_missing_connections(
     note_path: str,
+    ctx: Context,
     top_k: int = 5,
 ) -> str:
     """Find notes that are semantically similar but NOT yet linked.
@@ -118,13 +122,13 @@ def find_missing_connections(
         JSON array of recommendations for notes that should probably
         be linked to the given note.
     """
-    rec = mcp.state["recommender"]
+    rec = ctx.lifespan_context["recommender"]
     results = rec.similar_to_note(note_path, top_k=top_k, exclude_linked=True)
     return json.dumps([r.to_dict() for r in results], indent=2)
 
 
 @mcp.tool()
-def reload_index() -> str:
+def reload_index(ctx: Context) -> str:
     """Force the recommender to reload its index from disk.
 
     Call this after re-indexing the vault (e.g., via the CLI) so that
@@ -136,12 +140,9 @@ def reload_index() -> str:
     """
     from vault_recommender.recommender import create_recommender
 
-    vault_path = mcp.state["vault_path"]
-    index_dir = mcp.state["index_dir"]
-    mcp.state["recommender"] = create_recommender(vault_path, index_dir)
-    return (
-        f"Index reloaded. {len(mcp.state['recommender'].index.entries)} notes indexed."
-    )
+    lc = ctx.lifespan_context
+    lc["recommender"] = create_recommender(lc["vault_path"], lc["index_dir"])
+    return f"Index reloaded. {len(lc['recommender'].index.entries)} notes indexed."
 
 
 if __name__ == "__main__":
