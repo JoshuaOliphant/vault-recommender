@@ -2,10 +2,11 @@
 # ABOUTME: Validates that semantic similarity + graph boosting produce ranked results.
 
 import numpy as np
+import pytest
 
 from vault_recommender.graph import LinkGraph
 from vault_recommender.indexer import NoteEntry, VaultIndex
-from vault_recommender.recommender import VaultRecommender
+from vault_recommender.recommender import VaultRecommender, create_recommender
 
 
 def _make_test_index() -> tuple[VaultIndex, LinkGraph]:
@@ -136,3 +137,23 @@ class TestVaultRecommender:
         assert "score" in d
         assert "reason" in d
         assert isinstance(d["score"], float)
+
+
+class TestCreateRecommender:
+    """Tests for the shared create_recommender factory."""
+
+    def test_missing_index_raises_file_not_found(self, tmp_path):
+        vault_path = tmp_path / "vault"
+        vault_path.mkdir()
+        index_dir = tmp_path / "nonexistent-index"
+        index_dir.mkdir()
+
+        with pytest.raises(FileNotFoundError, match="No index found"):
+            create_recommender(vault_path, index_dir)
+
+    def test_error_message_is_actionable(self, tmp_path):
+        index_dir = tmp_path / "idx"
+        index_dir.mkdir()
+
+        with pytest.raises(FileNotFoundError, match="vault-recommender index"):
+            create_recommender(tmp_path, index_dir)

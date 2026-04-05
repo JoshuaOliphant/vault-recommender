@@ -37,10 +37,8 @@ def cmd_index(args: argparse.Namespace) -> None:
 
 def cmd_recommend(args: argparse.Namespace) -> None:
     """Get recommendations for a note or topic."""
-    from vault_recommender.graph import build_graph
     from vault_recommender.indexer import DEFAULT_MODEL, VaultIndex
-    from vault_recommender.parser import parse_vault
-    from vault_recommender.recommender import VaultRecommender
+    from vault_recommender.recommender import create_recommender
 
     vault_path = Path(args.vault).resolve()
     index_dir = Path(args.index_dir).resolve()
@@ -66,13 +64,7 @@ def cmd_recommend(args: argparse.Namespace) -> None:
         print("No index found. Run 'index' first.", file=sys.stderr)
         sys.exit(1)
 
-    index = VaultIndex.load(index_dir)
-
-    # Rebuild graph from current vault (fast, no model needed)
-    notes = parse_vault(vault_path)
-    graph = build_graph(notes)
-
-    recommender = VaultRecommender(index=index, graph=graph, vault_path=vault_path)
+    recommender = create_recommender(vault_path, index_dir)
 
     if args.note:
         results = recommender.similar_to_note(
@@ -96,6 +88,35 @@ def cmd_recommend(args: argparse.Namespace) -> None:
                 print(f"     Tags:  {', '.join(rec.tags)}")
             print(f"     Why:   {rec.reason}")
             print(f"     Preview: {rec.snippet[:120]}...")
+
+
+def cmd_serve(args: argparse.Namespace) -> None:
+    """Start the HTTP recommendation server."""
+    from vault_recommender.recommender import create_recommender
+    from vault_recommender.server import run_server
+
+    vault_path = Path(args.vault).resolve()
+    index_dir = Path(args.index_dir).resolve()
+
+    print(f"Loading index from {index_dir}...", file=sys.stderr)
+    try:
+        recommender = create_recommender(vault_path, index_dir)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+    print(
+        f"Loaded {len(recommender.index.entries)} notes. "
+        f"Starting server on {args.host}:{args.port}",
+        file=sys.stderr,
+    )
+
+    run_server(
+        recommender=recommender,
+        vault_path=vault_path,
+        index_dir=index_dir,
+        host=args.host,
+        port=args.port,
+    )
 
 
 def main() -> None:
@@ -137,12 +158,21 @@ def main() -> None:
         "--rebuild", action="store_true", help="Rebuild index if vault has changed"
     )
 
+    # Serve command
+    srv = subparsers.add_parser("serve", help="Start HTTP recommendation server")
+    srv.add_argument(
+        "--host", default="127.0.0.1", help="Bind address (default: 127.0.0.1)"
+    )
+    srv.add_argument("--port", type=int, default=7532, help="Port (default: 7532)")
+
     args = parser.parse_args()
 
     if args.command == "index":
         cmd_index(args)
     elif args.command == "recommend":
         cmd_recommend(args)
+    elif args.command == "serve":
+        cmd_serve(args)
 
 
 if __name__ == "__main__":

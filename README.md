@@ -66,6 +66,37 @@ vault-recommender --vault /path/to/vault recommend --topic "python testing" --js
 
 The `--rebuild` flag checks whether any vault file is newer than the index. If so, it rebuilds automatically before querying. If the index is fresh, it skips silently.
 
+### HTTP Server (for hooks and fast queries)
+
+The CLI cold-starts the embedding model on every invocation (~13s). For latency-sensitive use cases like Claude Code hooks, run the HTTP server instead:
+
+```bash
+# Start the server (loads model once, then serves fast queries)
+vault-recommender --vault /path/to/vault serve
+
+# Custom host/port
+vault-recommender --vault /path/to/vault serve --host 0.0.0.0 --port 8000
+```
+
+Endpoints:
+
+```bash
+# Health check
+curl localhost:7532/health
+
+# Recommend by topic
+curl "localhost:7532/recommend?topic=career+transition&top_k=5"
+
+# Recommend by note
+curl "localhost:7532/recommend?note=areas/career/plan.md&top_k=3"
+
+# Find missing connections
+curl "localhost:7532/recommend?note=areas/career/plan.md&exclude_linked=true"
+
+# Hot-reload index after re-indexing via CLI
+curl -X POST localhost:7532/reload
+```
+
 ### MCP Server (Claude Code integration)
 
 Add to your `.mcp.json`:
