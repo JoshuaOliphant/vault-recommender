@@ -1,6 +1,6 @@
 [project]
 name = "vault-recommender"
-version = "0.2.0"
+version = "0.3.0"
 description = "Semantic recommendation engine for Obsidian vaults — embeddings + wiki-link graph boosting with MCP server for Claude Code integration."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -20,7 +20,6 @@ classifiers = [
 dependencies = [
     "fastmcp>=3.1.1",
     "pyyaml>=6.0.3",
-    "scikit-learn>=1.8.0",
     "sentence-transformers>=5.3.0",
 ]
 

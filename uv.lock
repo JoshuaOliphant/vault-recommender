@@ -1962,12 +1962,11 @@ wheels = [
 
 [[package]]
 name = "vault-recommender"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
     { name = "pyyaml" },
-    { name = "scikit-learn" },
     { name = "sentence-transformers" },
 ]
 
@@ -1980,7 +1979,6 @@ dev = [
 requires-dist = [
     { name = "fastmcp", specifier = ">=3.1.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "scikit-learn", specifier = ">=1.8.0" },
     { name = "sentence-transformers", specifier = ">=5.3.0" },
 ]
 

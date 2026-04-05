@@ -68,10 +68,10 @@ The `--rebuild` flag checks whether any vault file is newer than the index. If s
 
 ### HTTP Server (for hooks and fast queries)
 
-The CLI cold-starts the embedding model on every invocation (~13s). For latency-sensitive use cases like Claude Code hooks, run the HTTP server instead:
+The CLI cold-starts the embedding model on topic queries (~13s). For latency-sensitive use cases like Claude Code hooks, run the HTTP server instead:
 
 ```bash
-# Start the server (loads model once, then serves fast queries)
+# Start the server (loads index once, then serves fast queries)
 vault-recommender --vault /path/to/vault serve
 
 # Custom host/port
@@ -133,17 +133,12 @@ This exposes four tools:
 
 ```python
 from pathlib import Path
-from vault_recommender.parser import parse_vault
-from vault_recommender.indexer import build_index
-from vault_recommender.graph import build_graph
-from vault_recommender.recommender import VaultRecommender
+from vault_recommender.recommender import create_recommender
 
 vault = Path("/path/to/vault")
-notes = parse_vault(vault)
-index = build_index(notes)
-graph = build_graph(notes)
+index_dir = Path(".vault-recommender-index")
 
-rec = VaultRecommender(index=index, graph=graph, vault_path=vault)
+rec = create_recommender(vault, index_dir)
 
 # By topic
 results = rec.similar_to_topic("career transition")
