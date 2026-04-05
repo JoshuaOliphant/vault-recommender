@@ -5,15 +5,36 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
+from fastmcp.server.lifespan import lifespan
 
-# Heavy imports (sentence_transformers, torch, numpy) are deferred to
-# _get_recommender() so the MCP handshake completes before model loading.
 
-_recommender = None
-_vault_path: Path | None = None
+def _resolve_paths() -> tuple[Path, Path]:
+    """Resolve vault and index paths from env vars and project layout."""
+    project_dir = Path(__file__).parent.parent
+    index_dir = project_dir / ".vault-recommender-index"
+    vault_str = os.environ.get("VAULT_PATH", str(project_dir.parent))
+    vault_path = Path(vault_str).resolve()
+    return vault_path, index_dir
+
+
+@lifespan
+async def load_recommender(server):
+    """Load the embedding model and index at startup so tools respond instantly."""
+    from vault_recommender.recommender import create_recommender
+
+    vault_path, index_dir = _resolve_paths()
+    print(f"Loading recommender from {index_dir}...", file=sys.stderr)
+    recommender = create_recommender(vault_path, index_dir)
+    print(
+        f"Recommender ready: {len(recommender.index.entries)} notes indexed.",
+        file=sys.stderr,
+    )
+    yield {"recommender": recommender, "vault_path": vault_path, "index_dir": index_dir}
+
 
 mcp = FastMCP(
     "vault-recommender",
@@ -22,29 +43,8 @@ mcp = FastMCP(
         "Use these tools to find conceptually related notes, discover "
         "forgotten knowledge, and surface bridging connections."
     ),
+    lifespan=load_recommender,
 )
-
-
-def _get_recommender():
-    """Lazy-init the recommender from the pre-built index."""
-    global _recommender, _vault_path
-
-    if _recommender is not None:
-        return _recommender
-
-    from vault_recommender.recommender import create_recommender
-
-    experiment_dir = Path(__file__).parent.parent
-    index_dir = experiment_dir / ".vault-recommender-index"
-
-    vault_str = os.environ.get(
-        "VAULT_PATH",
-        str(experiment_dir.parent),
-    )
-    _vault_path = Path(vault_str).resolve()
-
-    _recommender = create_recommender(_vault_path, index_dir)
-    return _recommender
 
 
 @mcp.tool()
@@ -66,7 +66,7 @@ def recommend_by_topic(
         JSON array of recommendations with path, title, score, snippet,
         tags, and a reason explaining why each note was recommended.
     """
-    rec = _get_recommender()
+    rec = mcp.state["recommender"]
     results = rec.similar_to_topic(topic, top_k=top_k)
     return json.dumps([r.to_dict() for r in results], indent=2)
 
@@ -94,7 +94,7 @@ def recommend_by_note(
         JSON array of recommendations with path, title, score, snippet,
         tags, and a reason explaining why each note was recommended.
     """
-    rec = _get_recommender()
+    rec = mcp.state["recommender"]
     results = rec.similar_to_note(note_path, top_k=top_k, exclude_linked=exclude_linked)
     return json.dumps([r.to_dict() for r in results], indent=2)
 
@@ -106,7 +106,7 @@ def find_missing_connections(
 ) -> str:
     """Find notes that are semantically similar but NOT yet linked.
 
-    This is the "you should probably link these" tool — it surfaces
+    This is the "you should probably link these" tool -- it surfaces
     notes that are conceptually related but have no wiki-link connection.
     Great for strengthening the vault's link graph.
 
@@ -118,7 +118,7 @@ def find_missing_connections(
         JSON array of recommendations for notes that should probably
         be linked to the given note.
     """
-    rec = _get_recommender()
+    rec = mcp.state["recommender"]
     results = rec.similar_to_note(note_path, top_k=top_k, exclude_linked=True)
     return json.dumps([r.to_dict() for r in results], indent=2)
 
@@ -134,10 +134,14 @@ def reload_index() -> str:
     Returns:
         Confirmation message with the number of entries in the reloaded index.
     """
-    global _recommender
-    _recommender = None
-    rec = _get_recommender()
-    return f"Index reloaded. {len(rec.index.entries)} notes indexed."
+    from vault_recommender.recommender import create_recommender
+
+    vault_path = mcp.state["vault_path"]
+    index_dir = mcp.state["index_dir"]
+    mcp.state["recommender"] = create_recommender(vault_path, index_dir)
+    return (
+        f"Index reloaded. {len(mcp.state['recommender'].index.entries)} notes indexed."
+    )
 
 
 if __name__ == "__main__":
