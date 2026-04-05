@@ -110,7 +110,13 @@ def cmd_serve(args: argparse.Namespace) -> None:
         file=sys.stderr,
     )
 
-    run_server(recommender=recommender, host=args.host, port=args.port)
+    run_server(
+        recommender=recommender,
+        vault_path=vault_path,
+        index_dir=index_dir,
+        host=args.host,
+        port=args.port,
+    )
 
 
 def main() -> None:

@@ -6,7 +6,7 @@ Semantic recommendation engine for Obsidian vaults. Embeddings + wiki-link graph
 
 ```bash
 uv sync              # install deps
-uv run pytest -q     # run tests (34 tests, ~3s)
+uv run pytest -q     # run tests (~3s)
 ```
 
 ## Architecture
@@ -19,7 +19,7 @@ vault_recommender/
 ├── recommender.py   # Core engine: cosine similarity + graph boost + staleness boost
 ├── cli.py           # CLI entrypoint (vault-recommender command)
 ├── server.py        # HTTP server (Starlette/uvicorn) for fast hook integration
-└── mcp_server.py    # FastMCP server exposing 3 tools
+└── mcp_server.py    # FastMCP server exposing 4 tools
 ```
 
 **Scoring signals**: semantic similarity, link graph boost (1-hop + 2-hop), staleness boost (30+ day untouched notes).
@@ -37,7 +37,7 @@ uv run pytest -q                                      # tests
 
 - Python 3.12+, uv for package management
 - sentence-transformers (all-MiniLM-L6-v2, 384-dim)
-- scikit-learn (cosine similarity)
+- numpy (cosine similarity via dot product on normalized embeddings)
 - FastMCP (MCP server)
 - PyYAML (frontmatter parsing)
 - pytest (testing)

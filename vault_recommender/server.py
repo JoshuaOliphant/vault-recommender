@@ -81,7 +81,7 @@ def create_app(
     vault_path: Path | None = None,
     index_dir: Path | None = None,
 ) -> Starlette:
-    """Build the ASGI app. Pass a recommender for test injection."""
+    """Build the ASGI app. Accepts a pre-built recommender or vault_path + index_dir."""
     routes = [
         Route("/health", _health, methods=["GET"]),
         Route("/recommend", _recommend, methods=["GET"]),

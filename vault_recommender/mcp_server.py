@@ -24,7 +24,7 @@ def _resolve_paths() -> tuple[Path, Path]:
 
 @lifespan
 async def load_recommender(server):
-    """Load the embedding model and index at startup so tools respond instantly."""
+    """Load the index and link graph at startup so tools respond quickly."""
     from vault_recommender.recommender import create_recommender
 
     vault_path, index_dir = _resolve_paths()
