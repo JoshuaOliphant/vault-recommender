@@ -51,6 +51,19 @@ uv run pytest -q                                      # tests
 
 ## Don'ts
 
-- Don't mock the embedding model — tests use real embeddings
+- Don't mock the embedding model — prefer hand-crafted vectors or the
+  `HashEncoder` stub in `tests/conftest.py` (injected via the `encoder=` kwarg
+  on `build_index` / `VaultRecommender`).
 - Don't add JavaScript dependencies — this is pure Python
 - Don't change the MCP tool signatures without updating README
+
+## Coverage Rule (REQUIRED)
+
+**100% test coverage is required.** `pyproject.toml` configures pytest to fail
+under 100% via `--cov-fail-under=100`. Before committing or marking any task
+complete, run `uv run pytest` and confirm coverage is 100%.
+
+When a line is genuinely untestable (e.g., the `if __name__ == "__main__":`
+guard, or a branch that requires a live network/transport), mark it with
+`# pragma: no cover` and explain why in the commit message. Do not weaken
+`--cov-fail-under` to bypass the rule.

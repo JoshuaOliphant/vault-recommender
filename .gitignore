@@ -7,3 +7,6 @@ dist/
 build/
 .pytest_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+coverage.xml

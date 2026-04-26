@@ -1,6 +1,9 @@
 # ABOUTME: Integration tests for the recommendation engine.
 # ABOUTME: Validates that semantic similarity + graph boosting produce ranked results.
 
+import os
+import time
+
 import numpy as np
 import pytest
 
@@ -157,3 +160,85 @@ class TestCreateRecommender:
 
         with pytest.raises(FileNotFoundError, match="vault-recommender index"):
             create_recommender(tmp_path, index_dir)
+
+    def test_loads_existing_index(self, real_index):
+        _, index_dir, vault_path = real_index
+        rec = create_recommender(vault_path, index_dir)
+        assert rec.vault_path == vault_path
+        assert len(rec.index.entries) == 2
+
+
+class TestSimilarToTopic:
+    def test_topic_query_returns_results(self):
+        from tests.conftest import HashEncoder
+
+        # Encoder dimension must match the index's embedding dimension
+        index, graph = _make_test_index()
+        rec = VaultRecommender(
+            index=index, graph=graph, encoder=HashEncoder(dim=3)
+        )
+
+        results = rec.similar_to_topic("python", top_k=2)
+        assert len(results) == 2
+        for r in results:
+            assert "semantic similarity" in r.reason
+
+    def test_get_model_lazy_loads_when_no_encoder_injected(self, monkeypatch):
+        from tests.conftest import HashEncoder
+        import vault_recommender.recommender as rec_mod
+
+        # Patch the SentenceTransformer constructor so no network is required
+        monkeypatch.setattr(
+            rec_mod, "SentenceTransformer", lambda name: HashEncoder(dim=3)
+        )
+
+        index, graph = _make_test_index()
+        rec = VaultRecommender(index=index, graph=graph)
+        assert rec._model is None
+        m1 = rec._get_model()
+        assert isinstance(m1, HashEncoder)
+        # Subsequent calls return the cached instance
+        assert rec._get_model() is m1
+
+
+class TestStalenessBoost:
+    def test_stale_file_gets_boost(self, tmp_path):
+        # Vault with a real file we can age
+        (tmp_path / "python-guide.md").write_text("# Python")
+        old = time.time() - 60 * 60 * 24 * 365  # 1 year old
+        os.utime(tmp_path / "python-guide.md", (old, old))
+
+        index, graph = _make_test_index()
+        rec = VaultRecommender(
+            index=index, graph=graph, vault_path=tmp_path, staleness_boost=0.1
+        )
+        results = rec.similar_to_note("coding-tips.md", top_k=4)
+        python_result = next(r for r in results if r.path == "python-guide.md")
+        assert "stale" in python_result.reason
+
+    def test_fresh_file_gets_no_staleness_boost(self, tmp_path):
+        (tmp_path / "python-guide.md").write_text("# Python")
+        # Default mtime is "now" — should not be stale
+        index, graph = _make_test_index()
+        rec = VaultRecommender(index=index, graph=graph, vault_path=tmp_path)
+        results = rec.similar_to_note("coding-tips.md", top_k=4)
+        python_result = next(r for r in results if r.path == "python-guide.md")
+        assert "stale" not in python_result.reason
+
+    def test_missing_file_skips_staleness_branch(self, tmp_path):
+        # vault_path set, but the entry's file doesn't exist on disk
+        index, graph = _make_test_index()
+        rec = VaultRecommender(index=index, graph=graph, vault_path=tmp_path)
+        results = rec.similar_to_note("python-guide.md", top_k=3)
+        for r in results:
+            assert "stale" not in r.reason
+
+
+class TestGraphBoost:
+    def test_2hop_neighbor_gets_smaller_boost(self):
+        index, graph = _make_test_index()
+        # career-plan -> python-guide -> coding-tips, so coding-tips is 2 hops from career-plan
+        rec = VaultRecommender(index=index, graph=graph)
+        results = rec.similar_to_note("career-plan.md", top_k=4)
+        coding_result = next(r for r in results if r.path == "coding-tips.md")
+        assert "2-hop" in coding_result.reason
