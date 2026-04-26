@@ -176,6 +176,7 @@ def build_index(
     parsed_notes: list,
     model_name: str = DEFAULT_MODEL,
     snippet_length: int = 200,
+    encoder=None,
 ) -> VaultIndex:
     """Build a semantic index from parsed notes.
 
@@ -183,11 +184,13 @@ def build_index(
         parsed_notes: List of ParsedNote objects from the parser.
         model_name: Sentence-transformer model to use.
         snippet_length: Characters to include in the snippet for LLM context.
+        encoder: Optional pre-loaded encoder with an ``encode`` method.
+            Allows tests to skip the SentenceTransformer download.
 
     Returns:
         VaultIndex with embeddings and metadata.
     """
-    model = SentenceTransformer(model_name)
+    model = encoder if encoder is not None else SentenceTransformer(model_name)
 
     entries = []
     texts = []

@@ -145,5 +145,5 @@ def reload_index(ctx: Context) -> str:
     return f"Index reloaded. {len(lc['recommender'].index.entries)} notes indexed."
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     mcp.run(transport="stdio")

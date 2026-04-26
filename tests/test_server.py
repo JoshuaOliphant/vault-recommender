@@ -12,9 +12,12 @@ from tests.test_recommender import _make_test_index
 def client():
     """Build a TestClient with a real recommender injected."""
     from vault_recommender.server import create_app
+    from tests.conftest import HashEncoder
 
     index, graph = _make_test_index()
-    recommender = VaultRecommender(index=index, graph=graph)
+    recommender = VaultRecommender(
+        index=index, graph=graph, encoder=HashEncoder(dim=3)
+    )
     app = create_app(recommender=recommender)
     return TestClient(app)
 
@@ -118,3 +121,70 @@ class TestRouting:
     def test_unknown_route_returns_404(self, client):
         resp = client.get("/nonexistent")
         assert resp.status_code == 404
+
+
+class TestRecommendByTopic:
+    def test_topic_query_returns_results(self, client):
+        resp = client.get("/recommend", params={"topic": "python", "top_k": "2"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body) == 2
+        for r in body:
+            assert "score" in r
+
+
+class TestCreateApp:
+    def test_create_app_with_vault_path_loads_recommender(self, real_index):
+        from vault_recommender.server import create_app
+
+        _, index_dir, vault_path = real_index
+        app = create_app(vault_path=vault_path, index_dir=index_dir)
+        client = TestClient(app)
+        resp = client.get("/health")
+        assert resp.status_code == 200
+        assert resp.json()["notes_indexed"] == 2
+
+    def test_create_app_without_args_raises(self):
+        from vault_recommender.server import create_app
+
+        with pytest.raises(ValueError, match="recommender or vault_path"):
+            create_app()
+
+
+class TestReloadWithVaultPath:
+    def test_reload_rebuilds_recommender(self, real_index):
+        from vault_recommender.server import create_app
+
+        _, index_dir, vault_path = real_index
+        app = create_app(vault_path=vault_path, index_dir=index_dir)
+        client = TestClient(app)
+        resp = client.post("/reload")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "reloaded" in body["message"].lower()
+        assert "2 notes" in body["message"]
+
+
+class TestRunServer:
+    def test_run_server_invokes_uvicorn(self, monkeypatch, real_index):
+        import vault_recommender.server as srv_mod
+
+        captured = {}
+
+        def fake_run(app, host, port):
+            captured["app"] = app
+            captured["host"] = host
+            captured["port"] = port
+
+        # Patch uvicorn.run to avoid actually starting a server
+        import uvicorn
+
+        monkeypatch.setattr(uvicorn, "run", fake_run)
+
+        _, index_dir, vault_path = real_index
+        srv_mod.run_server(
+            vault_path=vault_path, index_dir=index_dir, host="0.0.0.0", port=9999
+        )
+        assert captured["host"] == "0.0.0.0"
+        assert captured["port"] == 9999
+        assert captured["app"] is not None

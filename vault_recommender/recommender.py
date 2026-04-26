@@ -66,6 +66,7 @@ class VaultRecommender:
         link_boost_1hop: float = 0.50,
         link_boost_2hop: float = 0.05,
         staleness_boost: float = 0.1,
+        encoder=None,
     ):
         self.index = index
         self.graph = graph
@@ -73,9 +74,9 @@ class VaultRecommender:
         self.link_boost_1hop = link_boost_1hop
         self.link_boost_2hop = link_boost_2hop
         self.staleness_boost = staleness_boost
-        self._model: SentenceTransformer | None = None
+        self._model = encoder
 
-    def _get_model(self) -> SentenceTransformer:
+    def _get_model(self):
         if self._model is None:
             self._model = SentenceTransformer(self.index.model_name)
         return self._model
