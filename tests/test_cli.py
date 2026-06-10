@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -123,7 +125,6 @@ class TestCmdRecommend:
         _build_index(vault, index_dir)
 
         # Touch a file so the index becomes stale
-        import os, time
         future = time.time() + 10_000
         os.utime(vault / "a.md", (future, future))
 
