@@ -174,9 +174,7 @@ class TestSimilarToTopic:
 
         # Encoder dimension must match the index's embedding dimension
         index, graph = _make_test_index()
-        rec = VaultRecommender(
-            index=index, graph=graph, encoder=HashEncoder(dim=3)
-        )
+        rec = VaultRecommender(index=index, graph=graph, encoder=HashEncoder(dim=3))
 
         results = rec.similar_to_topic("python", top_k=2)
         assert len(results) == 2

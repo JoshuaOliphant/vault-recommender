@@ -28,7 +28,9 @@ class HashEncoder:
     def _vec(self, text: str) -> np.ndarray:
         h = hashlib.sha256(text.encode("utf-8")).digest()
         # Map bytes to floats in [-1, 1], cycling as needed
-        raw = np.frombuffer((h * ((self.dim // len(h)) + 1))[: self.dim], dtype=np.uint8)
+        raw = np.frombuffer(
+            (h * ((self.dim // len(h)) + 1))[: self.dim], dtype=np.uint8
+        )
         v = (raw.astype(np.float32) / 127.5) - 1.0
         n = np.linalg.norm(v)
         return v / n if n else v

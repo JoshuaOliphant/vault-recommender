@@ -32,7 +32,9 @@ class TestVaultIndexValidation:
 class TestSaveAndLoad:
     def test_round_trip_preserves_data(self, tmp_path):
         entries = [
-            NoteEntry(path="a.md", title="A", tags=["x"], wiki_links=["b"], snippet="aa"),
+            NoteEntry(
+                path="a.md", title="A", tags=["x"], wiki_links=["b"], snippet="aa"
+            ),
             NoteEntry(path="b.md", title="B"),
         ]
         embeddings = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
@@ -57,7 +59,15 @@ class TestSaveAndLoad:
         np.save(tmp_path / "embeddings.npy", np.zeros((1, 2), dtype=np.float32))
         meta = {
             "model_name": "test",
-            "entries": [{"path": "a.md", "title": "A", "tags": [], "wiki_links": [], "snippet": ""}],
+            "entries": [
+                {
+                    "path": "a.md",
+                    "title": "A",
+                    "tags": [],
+                    "wiki_links": [],
+                    "snippet": "",
+                }
+            ],
         }
         (tmp_path / "metadata.json").write_text(json.dumps(meta))
 
@@ -69,7 +79,15 @@ class TestSaveAndLoad:
         meta = {
             "model_name": "test",
             "built_at": "2024-01-01T00:00:00",  # naive
-            "entries": [{"path": "a.md", "title": "A", "tags": [], "wiki_links": [], "snippet": ""}],
+            "entries": [
+                {
+                    "path": "a.md",
+                    "title": "A",
+                    "tags": [],
+                    "wiki_links": [],
+                    "snippet": "",
+                }
+            ],
         }
         (tmp_path / "metadata.json").write_text(json.dumps(meta))
 
@@ -144,13 +162,16 @@ class TestIsStale:
     def test_newer_md_file_marks_stale(self, tmp_path):
         index_dir = tmp_path / "idx"
         # Built in the past
-        self._stamp_index(index_dir, when=datetime.now(timezone.utc) - timedelta(days=1))
+        self._stamp_index(
+            index_dir, when=datetime.now(timezone.utc) - timedelta(days=1)
+        )
         # Add a fresh .md file
         f = tmp_path / "fresh.md"
         f.write_text("# Fresh")
         # Force mtime to now
         now = time.time()
         import os
+
         os.utime(f, (now, now))
         assert VaultIndex.is_stale(index_dir, tmp_path) is True
 
@@ -161,6 +182,7 @@ class TestIsStale:
         f.write_text("# Old")
         old = time.time() - 60 * 60 * 24
         import os
+
         os.utime(f, (old, old))
         assert VaultIndex.is_stale(index_dir, tmp_path) is False
 
