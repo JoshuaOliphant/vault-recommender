@@ -13,7 +13,9 @@ import pytest
 from tests.conftest import HashEncoder
 
 
-def _ctx_with(recommender, vault_path: Path | None = None, index_dir: Path | None = None):
+def _ctx_with(
+    recommender, vault_path: Path | None = None, index_dir: Path | None = None
+):
     """Build a stub fastmcp.Context exposing the lifespan_context dict."""
     return SimpleNamespace(
         lifespan_context={
@@ -30,9 +32,7 @@ def recommender():
     from vault_recommender.recommender import VaultRecommender
 
     index, graph = _make_test_index()
-    return VaultRecommender(
-        index=index, graph=graph, encoder=HashEncoder(dim=3)
-    )
+    return VaultRecommender(index=index, graph=graph, encoder=HashEncoder(dim=3))
 
 
 class TestRecommendByTopic:
@@ -139,5 +139,6 @@ class TestEntrypointGuard:
         # server — not testable without a transport. The guard is marked
         # `# pragma: no cover` in the source, so this test simply documents that.
         import vault_recommender.mcp_server as m
+
         src = Path(m.__file__).read_text()
         assert "pragma: no cover" in src

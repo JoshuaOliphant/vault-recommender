@@ -15,9 +15,7 @@ def client():
     from tests.conftest import HashEncoder
 
     index, graph = _make_test_index()
-    recommender = VaultRecommender(
-        index=index, graph=graph, encoder=HashEncoder(dim=3)
-    )
+    recommender = VaultRecommender(index=index, graph=graph, encoder=HashEncoder(dim=3))
     app = create_app(recommender=recommender)
     return TestClient(app)
 

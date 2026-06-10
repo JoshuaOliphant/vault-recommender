@@ -43,7 +43,9 @@ def _build_index(vault: Path, index_dir: Path) -> None:
 
 
 class TestCmdIndex:
-    def test_builds_and_persists_index(self, vault, tmp_path, patched_transformer, capsys):
+    def test_builds_and_persists_index(
+        self, vault, tmp_path, patched_transformer, capsys
+    ):
         index_dir = tmp_path / "idx"
         _build_index(vault, index_dir)
 
@@ -54,7 +56,9 @@ class TestCmdIndex:
 
 
 class TestCmdRecommend:
-    def _make_args(self, vault: Path, index_dir: Path, **overrides) -> argparse.Namespace:
+    def _make_args(
+        self, vault: Path, index_dir: Path, **overrides
+    ) -> argparse.Namespace:
         defaults = dict(
             vault=str(vault),
             index_dir=str(index_dir),
@@ -83,7 +87,9 @@ class TestCmdRecommend:
             cli.cmd_recommend(args)
         assert exc.value.code == 1
 
-    def test_recommend_by_note_human_output(self, vault, tmp_path, patched_transformer, capsys):
+    def test_recommend_by_note_human_output(
+        self, vault, tmp_path, patched_transformer, capsys
+    ):
         index_dir = tmp_path / "idx"
         _build_index(vault, index_dir)
         args = self._make_args(vault, index_dir, note="a.md")
@@ -93,22 +99,22 @@ class TestCmdRecommend:
         assert "Path:" in out
         assert "Score:" in out
 
-    def test_recommend_by_note_with_tags_output(self, vault, tmp_path, patched_transformer, capsys):
+    def test_recommend_by_note_with_tags_output(
+        self, vault, tmp_path, patched_transformer, capsys
+    ):
         # Add a note with tags so the "Tags:" branch is exercised
-        (vault / "tagged.md").write_text(
-            "---\ntitle: T\ntags: [py, code]\n---\n\nbody"
-        )
+        (vault / "tagged.md").write_text("---\ntitle: T\ntags: [py, code]\n---\n\nbody")
         # Add another tagged note so it can show up in results
-        (vault / "other.md").write_text(
-            "---\ntitle: O\ntags: [py]\n---\n\nbody"
-        )
+        (vault / "other.md").write_text("---\ntitle: O\ntags: [py]\n---\n\nbody")
         index_dir = tmp_path / "idx"
         _build_index(vault, index_dir)
         args = self._make_args(vault, index_dir, note="tagged.md", top_k=3)
         cli.cmd_recommend(args)
         assert "Tags:" in capsys.readouterr().out
 
-    def test_recommend_by_topic_json_output(self, vault, tmp_path, patched_transformer, capsys):
+    def test_recommend_by_topic_json_output(
+        self, vault, tmp_path, patched_transformer, capsys
+    ):
         index_dir = tmp_path / "idx"
         _build_index(vault, index_dir)
         capsys.readouterr()  # discard build output
@@ -133,7 +139,9 @@ class TestCmdRecommend:
         err = capsys.readouterr().err
         assert "stale" in err.lower()
 
-    def test_rebuild_when_fresh_skips(self, vault, tmp_path, patched_transformer, capsys):
+    def test_rebuild_when_fresh_skips(
+        self, vault, tmp_path, patched_transformer, capsys
+    ):
         index_dir = tmp_path / "idx"
         _build_index(vault, index_dir)
         args = self._make_args(vault, index_dir, note="a.md", rebuild=True)
@@ -175,7 +183,9 @@ class TestCmdServe:
         assert exc.value.code == 1
         assert "No index" in capsys.readouterr().err
 
-    def test_serve_invokes_run_server(self, vault, tmp_path, monkeypatch, patched_transformer):
+    def test_serve_invokes_run_server(
+        self, vault, tmp_path, monkeypatch, patched_transformer
+    ):
         index_dir = tmp_path / "idx"
         _build_index(vault, index_dir)
 
@@ -196,36 +206,52 @@ class TestCmdServe:
 
 
 class TestMain:
-    def test_main_dispatches_index(self, vault, tmp_path, monkeypatch, patched_transformer):
+    def test_main_dispatches_index(
+        self, vault, tmp_path, monkeypatch, patched_transformer
+    ):
         index_dir = tmp_path / "idx"
         monkeypatch.setattr(
-            sys, "argv", [
+            sys,
+            "argv",
+            [
                 "vault-recommender",
-                "--vault", str(vault),
-                "--index-dir", str(index_dir),
+                "--vault",
+                str(vault),
+                "--index-dir",
+                str(index_dir),
                 "index",
-            ]
+            ],
         )
         cli.main()
         assert (index_dir / "metadata.json").exists()
 
-    def test_main_dispatches_recommend(self, vault, tmp_path, monkeypatch, patched_transformer):
+    def test_main_dispatches_recommend(
+        self, vault, tmp_path, monkeypatch, patched_transformer
+    ):
         index_dir = tmp_path / "idx"
         _build_index(vault, index_dir)
         monkeypatch.setattr(
-            sys, "argv", [
+            sys,
+            "argv",
+            [
                 "vault-recommender",
-                "--vault", str(vault),
-                "--index-dir", str(index_dir),
+                "--vault",
+                str(vault),
+                "--index-dir",
+                str(index_dir),
                 "recommend",
-                "--note", "a.md",
-                "--top-k", "1",
+                "--note",
+                "a.md",
+                "--top-k",
+                "1",
                 "--json",
-            ]
+            ],
         )
         cli.main()
 
-    def test_main_dispatches_serve(self, vault, tmp_path, monkeypatch, patched_transformer):
+    def test_main_dispatches_serve(
+        self, vault, tmp_path, monkeypatch, patched_transformer
+    ):
         index_dir = tmp_path / "idx"
         _build_index(vault, index_dir)
 
@@ -235,15 +261,17 @@ class TestMain:
             lambda **kwargs: called.update(kwargs),
         )
         monkeypatch.setattr(
-            sys, "argv", [
+            sys,
+            "argv",
+            [
                 "vault-recommender",
-                "--vault", str(vault),
-                "--index-dir", str(index_dir),
+                "--vault",
+                str(vault),
+                "--index-dir",
+                str(index_dir),
                 "serve",
-            ]
+            ],
         )
         cli.main()
         assert called["host"] == "127.0.0.1"
         assert called["port"] == 7532
-
-
