@@ -1,5 +1,5 @@
 # ABOUTME: Tests for the MCP tool functions and lifespan loader.
-# ABOUTME: Calls tool functions directly with a stub Context, no real MCP transport.
+# ABOUTME: Calls tools directly with a stub Context, and via an in-memory fastmcp Client.
 
 from __future__ import annotations
 
@@ -117,19 +117,32 @@ class TestServerContract:
         tools = asyncio.run(mcp.list_tools())
         contract = {
             t.name: (
-                sorted(t.parameters.get("properties", {})),
+                {
+                    name: (prop.get("type"), prop.get("default"))
+                    for name, prop in t.parameters.get("properties", {}).items()
+                },
                 t.parameters.get("required", []),
             )
             for t in tools
         }
         assert contract == {
-            "recommend_by_topic": (["top_k", "topic"], ["topic"]),
+            "recommend_by_topic": (
+                {"topic": ("string", None), "top_k": ("integer", 10)},
+                ["topic"],
+            ),
             "recommend_by_note": (
-                ["exclude_linked", "note_path", "top_k"],
+                {
+                    "note_path": ("string", None),
+                    "top_k": ("integer", 10),
+                    "exclude_linked": ("boolean", False),
+                },
                 ["note_path"],
             ),
-            "find_missing_connections": (["note_path", "top_k"], ["note_path"]),
-            "reload_index": ([], []),
+            "find_missing_connections": (
+                {"note_path": ("string", None), "top_k": ("integer", 5)},
+                ["note_path"],
+            ),
+            "reload_index": ({}, []),
         }
 
     def test_lifespan_loads_recommender_for_tool_calls(self, real_index, monkeypatch):
