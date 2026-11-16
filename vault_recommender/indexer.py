@@ -5,8 +5,8 @@ from __future__ import annotations
 
 import json
 import sys
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -48,7 +48,7 @@ class VaultIndex:
         """
         directory.mkdir(parents=True, exist_ok=True)
         np.save(directory / "embeddings.npy", self.embeddings)
-        self.built_at = datetime.now(timezone.utc)
+        self.built_at = datetime.now(UTC)
         metadata = {
             "model_name": self.model_name,
             "built_at": self.built_at.isoformat(),
@@ -69,7 +69,7 @@ class VaultIndex:
         if built_at_str:
             parsed = datetime.fromisoformat(built_at_str)
             if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=timezone.utc)
+                parsed = parsed.replace(tzinfo=UTC)
             built_at = parsed
         return cls(
             entries=entries,
@@ -112,7 +112,7 @@ class VaultIndex:
 
         # Ensure built_at is timezone-aware for comparison
         if built_at.tzinfo is None:
-            built_at = built_at.replace(tzinfo=timezone.utc)
+            built_at = built_at.replace(tzinfo=UTC)
 
         if not vault_path.is_dir():
             print(
@@ -125,13 +125,12 @@ class VaultIndex:
         max_mtime: float = 0.0
         for md_file in vault_path.rglob("*.md"):
             mtime = md_file.stat().st_mtime
-            if mtime > max_mtime:
-                max_mtime = mtime
+            max_mtime = max(max_mtime, mtime)
 
         if max_mtime == 0.0:
             return False  # No .md files in vault — nothing to index
 
-        newest_file_time = datetime.fromtimestamp(max_mtime, tz=timezone.utc)
+        newest_file_time = datetime.fromtimestamp(max_mtime, tz=UTC)
         return newest_file_time > built_at
 
 

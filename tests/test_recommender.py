@@ -182,8 +182,8 @@ class TestSimilarToTopic:
             assert "semantic similarity" in r.reason
 
     def test_get_model_lazy_loads_when_no_encoder_injected(self, monkeypatch):
-        from tests.conftest import HashEncoder
         import vault_recommender.recommender as rec_mod
+        from tests.conftest import HashEncoder
 
         # Patch the SentenceTransformer constructor so no network is required
         monkeypatch.setattr(
