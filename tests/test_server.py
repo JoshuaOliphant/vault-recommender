@@ -4,15 +4,15 @@
 import pytest
 from starlette.testclient import TestClient
 
-from vault_recommender.recommender import VaultRecommender
 from tests.test_recommender import _make_test_index
+from vault_recommender.recommender import VaultRecommender
 
 
 @pytest.fixture
 def client():
     """Build a TestClient with a real recommender injected."""
-    from vault_recommender.server import create_app
     from tests.conftest import HashEncoder
+    from vault_recommender.server import create_app
 
     index, graph = _make_test_index()
     recommender = VaultRecommender(index=index, graph=graph, encoder=HashEncoder(dim=3))

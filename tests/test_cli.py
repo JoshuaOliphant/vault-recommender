@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from vault_recommender import cli
 from tests.conftest import HashEncoder
+from vault_recommender import cli
 
 
 @pytest.fixture
@@ -59,17 +59,17 @@ class TestCmdRecommend:
     def _make_args(
         self, vault: Path, index_dir: Path, **overrides
     ) -> argparse.Namespace:
-        defaults = dict(
-            vault=str(vault),
-            index_dir=str(index_dir),
-            note=None,
-            topic=None,
-            top_k=2,
-            exclude_linked=False,
-            json=False,
-            rebuild=False,
-            model="all-MiniLM-L6-v2",
-        )
+        defaults = {
+            "vault": str(vault),
+            "index_dir": str(index_dir),
+            "note": None,
+            "topic": None,
+            "top_k": 2,
+            "exclude_linked": False,
+            "json": False,
+            "rebuild": False,
+            "model": "all-MiniLM-L6-v2",
+        }
         defaults.update(overrides)
         return argparse.Namespace(**defaults)
 

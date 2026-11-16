@@ -14,7 +14,7 @@ from vault_recommender.graph import LinkGraph, build_graph
 from vault_recommender.indexer import VaultIndex
 
 
-def create_recommender(vault_path: Path, index_dir: Path) -> "VaultRecommender":
+def create_recommender(vault_path: Path, index_dir: Path) -> VaultRecommender:
     """Load index, parse vault, build graph, and return a ready recommender.
 
     Shared factory used by CLI, HTTP server, and MCP server so init logic

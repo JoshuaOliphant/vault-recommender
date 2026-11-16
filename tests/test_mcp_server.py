@@ -1,12 +1,12 @@
 # ABOUTME: Tests for the MCP tool functions and lifespan loader.
-# ABOUTME: Calls tool functions directly with a stub Context, no real MCP transport.
+# ABOUTME: Calls tools directly with a stub Context, and via an in-memory fastmcp Client.
 
 from __future__ import annotations
 
 import asyncio
 import json
-from types import SimpleNamespace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -108,29 +108,64 @@ class TestResolvePaths:
         assert vault_path.is_absolute()
 
 
-class TestLifespan:
-    def test_loads_recommender_into_context(self, real_index, monkeypatch):
+class TestServerContract:
+    """Drive the real FastMCP server in-memory, as Claude Code's client would."""
+
+    def test_tools_keep_names_and_parameters(self):
+        from vault_recommender.mcp_server import mcp
+
+        tools = asyncio.run(mcp.list_tools())
+        contract = {
+            t.name: (
+                {
+                    name: (prop.get("type"), prop.get("default"))
+                    for name, prop in t.parameters.get("properties", {}).items()
+                },
+                t.parameters.get("required", []),
+            )
+            for t in tools
+        }
+        assert contract == {
+            "recommend_by_topic": (
+                {"topic": ("string", None), "top_k": ("integer", 10)},
+                ["topic"],
+            ),
+            "recommend_by_note": (
+                {
+                    "note_path": ("string", None),
+                    "top_k": ("integer", 10),
+                    "exclude_linked": ("boolean", False),
+                },
+                ["note_path"],
+            ),
+            "find_missing_connections": (
+                {"note_path": ("string", None), "top_k": ("integer", 5)},
+                ["note_path"],
+            ),
+            "reload_index": ({}, []),
+        }
+
+    def test_lifespan_loads_recommender_for_tool_calls(self, real_index, monkeypatch):
+        from fastmcp import Client
+
         from vault_recommender import mcp_server
 
         _, index_dir, vault_path = real_index
-        # Force _resolve_paths to point at our prepared index
         monkeypatch.setattr(
             mcp_server, "_resolve_paths", lambda: (vault_path, index_dir)
         )
 
         async def run():
-            agen = mcp_server.load_recommender._fn(server=None)
-            ctx = await agen.__anext__()
-            try:
-                assert "recommender" in ctx
-                assert ctx["vault_path"] == vault_path
-                assert ctx["index_dir"] == index_dir
-                assert len(ctx["recommender"].index.entries) == 2
-            finally:
-                with pytest.raises(StopAsyncIteration):
-                    await agen.__anext__()
+            async with Client(mcp_server.mcp) as client:
+                similar = await client.call_tool(
+                    "recommend_by_note", {"note_path": "beta.md", "top_k": 1}
+                )
+                reloaded = await client.call_tool("reload_index", {})
+            return json.loads(similar.content[0].text), reloaded.content[0].text
 
-        asyncio.run(run())
+        similar, reloaded = asyncio.run(run())
+        assert [r["path"] for r in similar] == ["alpha.md"]
+        assert reloaded == "Index reloaded. 2 notes indexed."
 
 
 class TestEntrypointGuard:

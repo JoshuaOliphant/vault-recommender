@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -93,7 +93,7 @@ class TestSaveAndLoad:
 
         loaded = VaultIndex.load(tmp_path)
         assert loaded.built_at is not None
-        assert loaded.built_at.tzinfo == timezone.utc
+        assert loaded.built_at.tzinfo == UTC
 
 
 class TestIsStale:
@@ -131,7 +131,7 @@ class TestIsStale:
     def test_naive_built_at_promoted_for_comparison(self, tmp_path):
         # Naive timestamp far in the future — vault file will be older
         future_naive = (
-            datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=365)
+            datetime.now(UTC).replace(tzinfo=None) + timedelta(days=365)
         ).replace(microsecond=0)
         index_dir = tmp_path / "idx"
         index_dir.mkdir()
@@ -149,22 +149,20 @@ class TestIsStale:
 
     def test_missing_vault_path_is_stale(self, tmp_path, capsys):
         index_dir = tmp_path / "idx"
-        self._stamp_index(index_dir, when=datetime.now(timezone.utc))
+        self._stamp_index(index_dir, when=datetime.now(UTC))
         assert VaultIndex.is_stale(index_dir, tmp_path / "no-vault") is True
         assert "vault path" in capsys.readouterr().err
 
     def test_empty_vault_is_not_stale(self, tmp_path):
         index_dir = tmp_path / "idx"
-        self._stamp_index(index_dir, when=datetime.now(timezone.utc))
+        self._stamp_index(index_dir, when=datetime.now(UTC))
         # Empty vault dir — no .md files
         assert VaultIndex.is_stale(index_dir, tmp_path) is False
 
     def test_newer_md_file_marks_stale(self, tmp_path):
         index_dir = tmp_path / "idx"
         # Built in the past
-        self._stamp_index(
-            index_dir, when=datetime.now(timezone.utc) - timedelta(days=1)
-        )
+        self._stamp_index(index_dir, when=datetime.now(UTC) - timedelta(days=1))
         # Add a fresh .md file
         f = tmp_path / "fresh.md"
         f.write_text("# Fresh")
@@ -177,7 +175,7 @@ class TestIsStale:
 
     def test_older_md_file_is_not_stale(self, tmp_path):
         index_dir = tmp_path / "idx"
-        self._stamp_index(index_dir, when=datetime.now(timezone.utc))
+        self._stamp_index(index_dir, when=datetime.now(UTC))
         f = tmp_path / "old.md"
         f.write_text("# Old")
         old = time.time() - 60 * 60 * 24
